@@ -37,28 +37,22 @@ public class ReflectionSerializer<T extends Transmittable> implements Serializer
 
                 switch(type){
                     case BOOLEAN:
-                        buffer.put((byte)((boolean)o ? 1 : 0));
+                        buffer.put((byte) ((boolean) o ? 1 : 0));
                         break;
                     case BYTE:
-                        buffer.put((byte)o);
+                        buffer.put((byte) o);
                         break;
                     case SHORT:
-                        buffer.putShort((short)o);
+                        buffer.putShort((short) o);
                         break;
                     case CHAR:
-                        buffer.putChar((char)o);
+                        buffer.putChar((char) o);
                         break;
                     case INT:
-                        buffer.putInt((int)o);
+                        buffer.putInt((int) o);
                         break;
                     case LONG:
-                        buffer.putLong((long)o);
-                        break;
-                    case FLOAT:
-                        buffer.putFloat((float)o);
-                        break;
-                    case DOUBLE:
-                        buffer.putDouble((double)o);
+                        buffer.putLong((long) o);
                         break;
                     case STRING:
                         BufferUtils.writeString(buffer, (String)o);
@@ -116,12 +110,6 @@ public class ReflectionSerializer<T extends Transmittable> implements Serializer
                         break;
                     case LONG:
                         o = buffer.getLong();
-                        break;
-                    case FLOAT:
-                        o = buffer.getFloat();
-                        break;
-                    case DOUBLE:
-                        o = buffer.getDouble();
                         break;
                     case STRING:
                         o = BufferUtils.readString(buffer);

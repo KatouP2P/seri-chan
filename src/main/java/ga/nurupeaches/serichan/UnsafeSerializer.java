@@ -30,7 +30,7 @@ public class UnsafeSerializer<T extends Transmittable> implements Serializer<T> 
             field = fields[i];
             offset = Serializer.unsafe.objectFieldOffset(field);
             type = FieldType.valueOf(field.getType());
-            buffer.put((byte)type.ordinal());
+            buffer.put((byte) type.ordinal());
 
             switch(type){
                 case BOOLEAN:
@@ -56,14 +56,6 @@ public class UnsafeSerializer<T extends Transmittable> implements Serializer<T> 
                 case LONG:
                     o = Serializer.unsafe.getLong(transmittable, offset);
                     buffer.putLong((long)o);
-                    break;
-                case FLOAT:
-                    o = Serializer.unsafe.getFloat(transmittable, offset);
-                    buffer.putFloat((float)o);
-                    break;
-                case DOUBLE:
-                    o = Serializer.unsafe.getDouble(transmittable, offset);
-                    buffer.putDouble((double)o);
                     break;
                 case STRING:
                     o = Serializer.unsafe.getObject(transmittable, offset);
@@ -93,7 +85,7 @@ public class UnsafeSerializer<T extends Transmittable> implements Serializer<T> 
             throw new SerializationException(e);
         }
 
-        FieldType types[] = FieldType.values();
+        FieldType[] types = FieldType.values();
         Field[] fields = cache.fieldCache.values().toArray(new Field[0]);
         long offset;
         for(int i=0; i < cache.fieldCache.size(); i++){
@@ -118,12 +110,6 @@ public class UnsafeSerializer<T extends Transmittable> implements Serializer<T> 
                         break;
                     case LONG:
                         Serializer.unsafe.putLong(obj, offset, buffer.getLong());
-                        break;
-                    case FLOAT:
-                        Serializer.unsafe.putFloat(obj, offset, buffer.getFloat());
-                        break;
-                    case DOUBLE:
-                        Serializer.unsafe.putDouble(obj, offset, buffer.getDouble());
                         break;
                     case STRING:
                         Serializer.unsafe.putObject(obj, offset, BufferUtils.readString(buffer));
