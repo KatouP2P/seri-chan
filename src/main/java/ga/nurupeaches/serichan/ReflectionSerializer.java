@@ -1,22 +1,28 @@
 package ga.nurupeaches.serichan;
 
+import ga.nurupeaches.common.utils.BufferUtils;
+
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
+import java.util.Arrays;
 
 public class ReflectionSerializer<T extends Transmittable> implements Serializer<T> {
 
+    private final Class<T> klass;
     private final Cache cache;
 
     ReflectionSerializer(Class<T> klass){
+        this.klass = klass;
         cache = new Cache();
         cache.populateCache(klass);
     }
 
     @Override
     public ByteBuffer serialize(Transmittable transmittable) throws SerializationException {
-        ByteBuffer buffer = ByteBuffer.allocate(Serializer.stringSize(transmittable.getClass().getName()) +
-                transmittable.getSize() + cache.fieldCache.size() * 2); // Add the field types.
+        String className = transmittable.getClass().getName();
+        ByteBuffer buffer = ByteBuffer.allocate(BufferUtils.stringSize(className) + transmittable.getSize() +
+                cache.fieldCache.size() * 2); // Add the field types.
+        BufferUtils.writeString(buffer, transmittable.getClass().getName());
 
         Field[] fields = cache.fieldCache.values().toArray(new Field[0]);
         Field field;
@@ -25,10 +31,9 @@ public class ReflectionSerializer<T extends Transmittable> implements Serializer
         for(int i=0; i < cache.fieldCache.size(); i++){
             try {
                 field = fields[i];
+                o = field.get(transmittable);
                 type = FieldType.valueOf(field.getType());
                 buffer.put((byte)type.ordinal());
-                buffer.put((byte)i);
-                o = field.get(transmittable);
 
                 switch(type){
                     case BOOLEAN:
@@ -56,18 +61,16 @@ public class ReflectionSerializer<T extends Transmittable> implements Serializer
                         buffer.putDouble((double)o);
                         break;
                     case STRING:
-                        char[] chars = ((String)o).toCharArray();
-                        buffer.putInt(chars.length);
-                        for(char c : chars){
-                            buffer.putChar(c);
-                        }
+                        BufferUtils.writeString(buffer, (String)o);
                         break;
                     case NONPRIMITIVE:
                         if(Transmittable.class.isAssignableFrom(field.getDeclaringClass())){
-                            buffer.put(serialize((Transmittable)field.get(transmittable)));
+                            buffer.put(serialize((Transmittable)o));
                         }
                         break;
                 }
+
+                System.out.println(i + ", " + type + ", " + Arrays.toString(buffer.array()));
             } catch (Throwable t){
                 throw new SerializationException(t);
             }
@@ -77,26 +80,70 @@ public class ReflectionSerializer<T extends Transmittable> implements Serializer
     }
 
     @Override
-    public T deserialize(ByteBuffer buffer){
-        int strLen = buffer.getInt();
-        char[] charClassName = new char[strLen];
-        for(int i=0; i < strLen; i++){
-            charClassName[i] = buffer.getChar();
-        }
-
-        String className = new String(charClassName);
-        Class<? extends Transmittable> objClass;
+    public T deserialize(ByteBuffer buffer) throws SerializationException {
+        T obj;
         try {
-            objClass = Class.forName(className).asSubclass(Transmittable.class);
-
-        } catch (ClassNotFoundException e){
-            LOGGER.log(Level.WARNING, "Failed to find class " + className);
-            return null;
-        } catch (ReflectiveOperationException e){
-            LOGGER.log(Level.WARNING, "Failed to find class " + className);
+            obj = klass.newInstance();
+        } catch (Throwable t){
+            throw new SerializationException(t);
         }
 
-        return null;
+        FieldType types[] = FieldType.values();
+        Field[] fields = cache.fieldCache.values().toArray(new Field[0]);
+        Field field;
+        Object o;
+        FieldType type;
+        for(int i=0; i < cache.fieldCache.size(); i++){
+            try {
+                field = fields[i];
+                type = types[buffer.get()];
+
+                switch(type){
+                    case BOOLEAN:
+                        o = buffer.get() == 1;
+                        break;
+                    case BYTE:
+                        o = buffer.get();
+                        break;
+                    case SHORT:
+                        o = buffer.getShort();
+                        break;
+                    case CHAR:
+                        o = buffer.getChar();
+                        break;
+                    case INT:
+                        o = buffer.getInt();
+                        break;
+                    case LONG:
+                        o = buffer.getLong();
+                        break;
+                    case FLOAT:
+                        o = buffer.getFloat();
+                        break;
+                    case DOUBLE:
+                        o = buffer.getDouble();
+                        break;
+                    case STRING:
+                        o = BufferUtils.readString(buffer);
+                        break;
+                    case NONPRIMITIVE:
+                        if(Transmittable.class.isAssignableFrom(field.getDeclaringClass())){
+                            o = deserialize(buffer);
+                        } else {
+                            o = null;
+                        }
+                        break;
+                    default:
+                        o = null;
+                        break;
+                }
+
+                field.set(obj, o);
+            } catch (Throwable t){
+                throw new SerializationException(t);
+            }
+        }
+        return obj;
     }
 
 }

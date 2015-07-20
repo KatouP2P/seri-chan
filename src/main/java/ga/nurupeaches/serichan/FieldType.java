@@ -5,6 +5,7 @@ public enum FieldType {
     BOOLEAN(boolean.class), BYTE(byte.class), SHORT(short.class), CHAR(char.class), INT(int.class),
     LONG(long.class), FLOAT(float.class), DOUBLE(double.class), STRING(String.class), NONPRIMITIVE(Void.class);
 
+    public static final FieldType[] VALUES = FieldType.values();
     private Class<?> primitiveClass;
 
     FieldType(Class<?> klass){

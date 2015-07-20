@@ -1,10 +1,14 @@
 package ga.nurupeaches.serichan;
 
+import ga.nurupeaches.common.utils.BufferUtils;
+
 public class SimpleTransmittableObject implements Transmittable {
 
     private int testInt;
     private long testLong;
     private String testString;
+
+    public SimpleTransmittableObject(){}
 
     public SimpleTransmittableObject(int i, long l, String s){
         testInt = i;
@@ -14,7 +18,18 @@ public class SimpleTransmittableObject implements Transmittable {
 
     @Override
     public int getSize(){
-        return Integer.BYTES + Long.BYTES + Serializer.stringSize(testString);
+        return Integer.BYTES + Long.BYTES + BufferUtils.stringSize(testString);
+    }
+
+    @Override
+    public boolean equals(Object o){
+        if(!(o instanceof SimpleTransmittableObject)){
+            return false;
+        }
+
+        SimpleTransmittableObject obj = (SimpleTransmittableObject)o;
+        System.out.println("int=" + obj.testInt + ",long=" + obj.testLong + ",string=" + obj.testString);
+        return obj.testInt == testInt && obj.testLong == testLong && obj.testString.equals(testString);
     }
 
 }

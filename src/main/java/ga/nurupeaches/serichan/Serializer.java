@@ -2,11 +2,9 @@ package ga.nurupeaches.serichan;
 
 import sun.misc.Unsafe;
 
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public interface Serializer<T extends Transmittable> {
@@ -16,16 +14,16 @@ public interface Serializer<T extends Transmittable> {
 
     // They'll never know what hit them.
     // NEVER DO THIS IN ACTUAL PRODUCTION CODE PLS.
-    static Unsafe unsafe = new Object(){
+    public static Unsafe unsafe = new Object(){
 
         Unsafe unsafe = null; {
-            try {
-                Field theUnsafe_f = Unsafe.class.getDeclaredField("theUnsafe");
-                theUnsafe_f.setAccessible(true);
-                unsafe = (Unsafe) theUnsafe_f.get(null);
-            } catch (ReflectiveOperationException e){
-                LOGGER.log(Level.WARNING, "Failed to get Unsafe instance.");
-            }
+//            try {
+//                Field theUnsafe_f = Unsafe.class.getDeclaredField("theUnsafe");
+//                theUnsafe_f.setAccessible(true);
+//                unsafe = (Unsafe) theUnsafe_f.get(null);
+//            } catch (ReflectiveOperationException e){
+//                LOGGER.log(Level.WARNING, "Failed to get Unsafe instance.");
+//            }
         }
 
     }.unsafe;
@@ -43,16 +41,8 @@ public interface Serializer<T extends Transmittable> {
         return serializer;
     }
 
-    public static int stringSize(String str){
-        int size = Integer.BYTES;
-        size += str.toCharArray().length * Character.BYTES;
-        return size;
-    }
-
     public ByteBuffer serialize(Transmittable transmittable) throws SerializationException;
 
     public T deserialize(ByteBuffer buffer) throws SerializationException;
-
-
 
 }
