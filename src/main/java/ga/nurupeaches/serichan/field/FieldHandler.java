@@ -1,6 +1,6 @@
 package ga.nurupeaches.serichan.field;
 
-public interface FieldHandler<T> {
+public interface FieldHandler<T> extends FieldRelated {
 
     /**
      * Sets the field for the given instance to the value.

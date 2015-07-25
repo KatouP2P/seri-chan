@@ -1,4 +1,4 @@
-package ga.nurupeaches.serichan.field.unsafe;
+package ga.nurupeaches.serichan.field.unsafe.object;
 
 import ga.nurupeaches.serichan.Serializer;
 import ga.nurupeaches.serichan.field.FieldType;

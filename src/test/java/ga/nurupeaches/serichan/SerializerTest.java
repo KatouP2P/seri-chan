@@ -1,6 +1,5 @@
 package ga.nurupeaches.serichan;
 
-import ga.nurupeaches.common.utils.BufferUtils;
 import junit.framework.TestCase;
 import org.junit.Test;
 
@@ -12,12 +11,11 @@ public class SerializerTest extends TestCase {
 
     @Test
     public void testSerializer() throws Exception {
-        SimpleTransmittableObject obj = new SimpleTransmittableObject(1337, Long.MAX_VALUE, "Hello, world!");
+        SimpleTransmittableObject obj = new SimpleTransmittableObject(1337, 13333333333337L, "Hello, world!");
         ByteBuffer buffer = serializer.serialize(obj);
         buffer.flip();
 
-        Serializer theSerializer = Serializer.getSerializer(Class.forName(BufferUtils.readString(buffer)).asSubclass(Transmittable.class));
-        Transmittable in = theSerializer.deserialize(buffer);
+        Transmittable in = Serializer.deserialize(buffer);
         assert obj.equals(in);
     }
 

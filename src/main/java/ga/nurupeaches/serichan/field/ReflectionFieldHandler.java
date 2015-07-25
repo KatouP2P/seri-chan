@@ -37,4 +37,15 @@ public class ReflectionFieldHandler<T> implements FieldHandler<T> {
     public FieldType getType(){
         return FieldType.valueOf(field.getType());
     }
+
+    @Override
+    public Field getField(){
+        return field;
+    }
+
+    @Override
+    public long getOffset(){
+        return -1;
+    }
+
 }
