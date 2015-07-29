@@ -1,8 +1,9 @@
 package ga.nurupeaches.serichan.field.unsafe.primitive;
 
 import ga.nurupeaches.serichan.Serializer;
-import ga.nurupeaches.serichan.field.FieldType;
 import ga.nurupeaches.serichan.field.UnsafeFieldHandler;
+
+import java.nio.ByteBuffer;
 
 public class UnsafeDoubleFieldHandler extends UnsafeFieldHandler<Double> {
 
@@ -17,8 +18,18 @@ public class UnsafeDoubleFieldHandler extends UnsafeFieldHandler<Double> {
     }
 
     @Override
-    public FieldType getType(){
-        return FieldType.DOUBLE;
+    public void write(Object instance, ByteBuffer buffer){
+        buffer.putDouble(get(instance));
+    }
+
+    @Override
+    public void read(Object instance, ByteBuffer buffer){
+        set(instance, buffer.getDouble());
+    }
+
+    @Override
+    public int size(Object instance){
+        return Double.BYTES;
     }
 
 }

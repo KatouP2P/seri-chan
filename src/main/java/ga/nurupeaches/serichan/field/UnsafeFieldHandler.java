@@ -2,19 +2,26 @@ package ga.nurupeaches.serichan.field;
 
 import ga.nurupeaches.common.exception.SerializationException;
 import ga.nurupeaches.serichan.Serializer;
-import ga.nurupeaches.serichan.field.unsafe.object.UnsafeObjectFieldHandler;
+import ga.nurupeaches.serichan.Transmittable;
 import ga.nurupeaches.serichan.field.unsafe.object.UnsafeStringFieldHandler;
+import ga.nurupeaches.serichan.field.unsafe.object.UnsafeTransmittableFieldHandler;
+import ga.nurupeaches.serichan.field.unsafe.object.common.UnsafeListFieldHandler;
 import ga.nurupeaches.serichan.field.unsafe.primitive.*;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public abstract class UnsafeFieldHandler<T> implements FieldHandler<T> {
 
+    private static final Map<Class<?>, Class<? extends UnsafeFieldHandler>> LOOKUP_MAP = new HashMap<>();
+
+    // A "extension" to the look-up map; used for Lists and such.
+    private static final Map<Class<?>, Class<? extends UnsafeFieldHandler>> EXTENDED_MAP = new HashMap<>();
+
     protected Field field;
     protected long offset;
-    private static final Map<Class<?>, Class<? extends UnsafeFieldHandler>> LOOKUP_MAP = new HashMap<>();
 
     static {
         LOOKUP_MAP.put(int.class, UnsafeIntFieldHandler.class);
@@ -23,14 +30,30 @@ public abstract class UnsafeFieldHandler<T> implements FieldHandler<T> {
         LOOKUP_MAP.put(long.class, UnsafeLongFieldHandler.class);
         LOOKUP_MAP.put(float.class, UnsafeFloatFieldHandler.class);
         LOOKUP_MAP.put(double.class, UnsafeDoubleFieldHandler.class);
-        LOOKUP_MAP.put(String.class, UnsafeStringFieldHandler.class);
         LOOKUP_MAP.put(boolean.class, UnsafeBooleanFieldHandler.class);
+        LOOKUP_MAP.put(String.class, UnsafeStringFieldHandler.class);
+
+        EXTENDED_MAP.put(List.class, UnsafeListFieldHandler.class);
+        EXTENDED_MAP.put(Map.class, UnsafeListFieldHandler.class);
     }
 
     public static UnsafeFieldHandler<?> newFieldHandler(Class<?> type){
         Class<? extends UnsafeFieldHandler> handlerClass = LOOKUP_MAP.get(type); // default
         if(handlerClass == null){
-            handlerClass = UnsafeObjectFieldHandler.class;
+            if(Transmittable.class.isAssignableFrom(type)){
+                handlerClass = UnsafeTransmittableFieldHandler.class;
+            } else {
+                for(Map.Entry<Class<?>, Class<? extends UnsafeFieldHandler>> entry : EXTENDED_MAP.entrySet()){
+                    if(entry.getKey().isAssignableFrom(type)){
+                        handlerClass = entry.getValue();
+                        break;
+                    }
+                }
+
+                if(handlerClass == null){
+                    return null;
+                }
+            }
         }
 
         try {

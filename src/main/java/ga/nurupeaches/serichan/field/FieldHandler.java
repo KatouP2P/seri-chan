@@ -1,5 +1,7 @@
 package ga.nurupeaches.serichan.field;
 
+import java.nio.ByteBuffer;
+
 public interface FieldHandler<T> extends FieldRelated {
 
     /**
@@ -16,10 +18,10 @@ public interface FieldHandler<T> extends FieldRelated {
      */
     public T get(Object instance);
 
-    /**
-     * Returns the field type as an enum.
-     * @return An enum representing the field type.
-     */
-    public FieldType getType();
+    public int size(Object instance);
+
+    public void read(Object instance, ByteBuffer buffer);
+
+    public void write(Object instance, ByteBuffer buffer);
 
 }

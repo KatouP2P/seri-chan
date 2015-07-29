@@ -1,24 +1,25 @@
 package ga.nurupeaches.serichan;
 
-import ga.nurupeaches.common.utils.BufferUtils;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SimpleTransmittableObject implements Transmittable {
 
     private int testInt;
-    private long testLong;
     private String testString;
+    private List<SubObj> subObj;
 
     public SimpleTransmittableObject(){}
 
-    public SimpleTransmittableObject(int i, long l, String s){
+    public SimpleTransmittableObject(int i, String str){
         testInt = i;
-        testLong = l;
-        testString = s;
+        testString = str;
+        subObj = new ArrayList<>();
+        subObj.add(new SubObj(i, reverseString(str)));
     }
 
-    @Override
-    public int getSize(){
-        return Integer.BYTES + Long.BYTES + BufferUtils.stringSize(testString);
+    public String reverseString(String str){
+        return new StringBuilder(str).reverse().toString();
     }
 
     @Override
@@ -28,9 +29,33 @@ public class SimpleTransmittableObject implements Transmittable {
         }
 
         SimpleTransmittableObject obj = (SimpleTransmittableObject)o;
-        System.out.println("local: int=" + testInt + ",long=" + testLong + ",string=" + testString);
-        System.out.println("remote: int=" + obj.testInt + ",long=" + obj.testLong + ",string=" + obj.testString);
-        return obj.testInt == testInt && obj.testLong == testLong && obj.testString.equals(testString);
+        System.out.println("local: int=" + testInt + ",subObj=" + subObj + ",str=" + testString);
+        System.out.println("remote: int=" + obj.testInt + ",subObj=" + obj.subObj + ",str=" + obj.testString);
+        return obj.testInt == testInt && subObj.equals(obj.subObj) && obj.testString.equals(testString);
+    }
+
+    private class SubObj implements Transmittable {
+
+        private String testString;
+        private int testInt;
+
+        public SubObj(int i, String str){
+            testInt = i;
+            testString = str;
+        }
+
+        @Override
+        public boolean equals(Object o){
+            if(!(o instanceof SubObj)){
+                return false;
+            }
+
+            SubObj obj = (SubObj)o;
+            System.out.println("local: int=" + testInt + ",str=" + testString);
+            System.out.println("remote: int=" + obj.testInt + ",str=" + obj.testString);
+            return obj.testInt == testInt && obj.testString.equals(testString);
+        }
+
     }
 
 }
