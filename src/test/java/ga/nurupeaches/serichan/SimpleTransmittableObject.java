@@ -1,21 +1,21 @@
 package ga.nurupeaches.serichan;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SimpleTransmittableObject implements Transmittable {
 
     private int testInt;
     private String testString;
-    private List<SubObj> subObj;
+    private Map<KeyObj, SubObj> subObj;
 
     public SimpleTransmittableObject(){}
 
     public SimpleTransmittableObject(int i, String str){
         testInt = i;
         testString = str;
-        subObj = new ArrayList<>();
-        subObj.add(new SubObj(i, reverseString(str)));
+        subObj = new HashMap<>();
+        subObj.put(new KeyObj(1), new SubObj(i, reverseString(str)));
     }
 
     public String reverseString(String str){
@@ -32,6 +32,28 @@ public class SimpleTransmittableObject implements Transmittable {
         System.out.println("local: int=" + testInt + ",subObj=" + subObj + ",str=" + testString);
         System.out.println("remote: int=" + obj.testInt + ",subObj=" + obj.subObj + ",str=" + obj.testString);
         return obj.testInt == testInt && subObj.equals(obj.subObj) && obj.testString.equals(testString);
+    }
+
+    private class KeyObj implements Transmittable {
+
+        private int testInt;
+
+        public KeyObj(int i){
+            testInt = i;
+        }
+
+        @Override
+        public boolean equals(Object o){
+            if(!(o instanceof KeyObj)){
+                return false;
+            }
+
+            KeyObj obj = (KeyObj)o;
+            System.out.println("local: int=" + testInt);
+            System.out.println("remote: int=" + obj.testInt);
+            return obj.testInt == testInt;
+        }
+
     }
 
     private class SubObj implements Transmittable {
