@@ -3,22 +3,20 @@ package ga.nurupeaches.serichan.field.unsafe.object.common;
 import ga.nurupeaches.common.exception.UncheckedReflectionException;
 import ga.nurupeaches.common.utils.BufferUtils;
 import ga.nurupeaches.serichan.Serializer;
-import ga.nurupeaches.serichan.Transmittable;
 import ga.nurupeaches.serichan.field.UnsafeFieldHandler;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UnsafeListFieldHandler<T extends Transmittable> extends UnsafeFieldHandler<List<T>> {
+public abstract class UnsafeListFieldHandler<T> extends UnsafeFieldHandler<List<T>> {
 
-    private Serializer serializer;
+    private Type type;
 
     @Override
     public List<T> get(Object instance){
-        return (List<T>)Serializer.THE_UNSAFE.getObject(instance, offset);
+        return (List<T>) Serializer.THE_UNSAFE.getObject(instance, offset);
     }
 
     @Override
@@ -28,14 +26,12 @@ public class UnsafeListFieldHandler<T extends Transmittable> extends UnsafeField
 
     @Override
     public void read(Object instance, ByteBuffer buffer){
-        checkSerializer();
-
         try {
             Class<?> listClass = Class.forName(BufferUtils.readString(buffer));
             if(!List.class.isAssignableFrom(listClass)){
                 throw new ClassNotFoundException("class didn't subclass list; wrong class?");
             }
-            List list = (List)Serializer.THE_UNSAFE.allocateInstance(listClass);
+            List<T> list = (List<T>)Serializer.THE_UNSAFE.allocateInstance(listClass);
             int size = buffer.getInt();
             // Specific to ArrayList since the elementData can never be null
             if(list instanceof ArrayList){
@@ -43,7 +39,7 @@ public class UnsafeListFieldHandler<T extends Transmittable> extends UnsafeField
                 Serializer.THE_UNSAFE.putObject(list, Serializer.THE_UNSAFE.objectFieldOffset(elementData_f), new Object[size]);
             }
             for(int i=0; i < size; i++){
-                list.add(serializer.deserialize(buffer));
+                list.add((T)type.readFromBuffer(buffer));
             }
             set(instance, list);
         } catch (ClassNotFoundException e){
@@ -57,32 +53,29 @@ public class UnsafeListFieldHandler<T extends Transmittable> extends UnsafeField
 
     @Override
     public void write(Object instance, ByteBuffer buffer){
-        checkSerializer();
         List<T> list = get(instance);
         BufferUtils.writeString(buffer, list.getClass().getName()); // write out list class
         buffer.putInt(list.size()); // write out the size
         for(T obj : list){
             // loop through and write each element
-            buffer.put((ByteBuffer)serializer.serialize(obj, false).flip());
+            type.writeToBuffer(obj, buffer);
         }
     }
 
     @Override
     public int size(Object instance){
-        checkSerializer();
         List<T> list = get(instance);
         int size = Integer.BYTES;
         for(T obj : list){
-            size += serializer.getCache().getSizeOfObject(obj);
+            size += type.sizeof(obj);
         }
         return BufferUtils.stringSize(list.getClass().getName()) + size;
     }
 
-    private final void checkSerializer(){
-        if(serializer == null){
-            ParameterizedType type = (ParameterizedType)field.getGenericType();
-            serializer = Serializer.getSerializer((Class<? extends Transmittable>)type.getActualTypeArguments()[0]);
-        }
+    @Override
+    public void initialize(Field field){
+        super.initialize(field);
+        type = Type.getType(field.getType());
     }
 
 }

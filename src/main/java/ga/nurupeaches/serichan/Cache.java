@@ -19,11 +19,11 @@ public class Cache {
         for(Field field : fields){
             if(field.isSynthetic()) continue; // Inner-Transmittable-classes will cause SOEs without this. Damn you this$0!
             if(Modifier.isStatic(field.getModifiers()) || Modifier.isTransient(field.getModifiers())) continue;
-            UnsafeFieldHandler<?> handler = UnsafeFieldHandler.newFieldHandler(field.getType());
+            FieldHandler<?> handler = UnsafeFieldHandler.newFieldHandler(field.getType());
             if(handler == null){
                 continue;
             }
-            handler._init(field);
+            handler.initialize(field);
             handlerMap.put(field, handler);
         }
         cached = true;

@@ -1,4 +1,4 @@
-package ga.nurupeaches.serichan.field.unsafe.object.common;
+package ga.nurupeaches.serichan.field.unsafe.object.common.map;
 
 import ga.nurupeaches.common.exception.UncheckedReflectionException;
 import ga.nurupeaches.common.utils.BufferUtils;
@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UnsafeMapFieldHandler<K extends Transmittable, V extends Transmittable> extends UnsafeFieldHandler<Map<K, V>> {
+public class UnsafeTransmittableKeyAndValueMapFieldHandler<K extends Transmittable, V extends Transmittable> extends UnsafeFieldHandler<Map<K, V>> {
 
     private Serializer keySerializer;
     private Serializer valueSerializer;

@@ -1,5 +1,6 @@
 package ga.nurupeaches.serichan.field;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
 public interface FieldHandler<T> extends FieldRelated {
@@ -23,5 +24,7 @@ public interface FieldHandler<T> extends FieldRelated {
     public void read(Object instance, ByteBuffer buffer);
 
     public void write(Object instance, ByteBuffer buffer);
+
+    public void initialize(Field field);
 
 }
