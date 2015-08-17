@@ -6,6 +6,7 @@ import ga.nurupeaches.serichan.Transmittable;
 import ga.nurupeaches.serichan.field.UnsafeFieldHandler;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
 public class UnsafeArrayFieldHandler<T extends Transmittable> extends UnsafeFieldHandler<T[]> {
@@ -24,7 +25,6 @@ public class UnsafeArrayFieldHandler<T extends Transmittable> extends UnsafeFiel
 
     @Override
     public void write(Object instance, ByteBuffer buffer){
-        checkSerializer();
         T[] arr = get(instance);
         buffer.putInt(arr.length); // write out array length
         for(T elem : arr){
@@ -38,7 +38,6 @@ public class UnsafeArrayFieldHandler<T extends Transmittable> extends UnsafeFiel
 
     @Override
     public void read(Object instance, ByteBuffer buffer){
-        checkSerializer();
         T[] arr = (T[])Array.newInstance(serializer.getSerializingClass(), buffer.getInt());
         for(int i=0; i < arr.length; i++){
             if(BufferUtils.peek(buffer) == -1){
@@ -58,16 +57,16 @@ public class UnsafeArrayFieldHandler<T extends Transmittable> extends UnsafeFiel
             if(elem == null){
                 size += Byte.BYTES;
             } else {
-                size += serializer.getCache().getSizeOfObject(elem);
+                size += serializer.sizeOf(elem);
             }
         }
         return size;
     }
 
-    private final void checkSerializer(){
-        if(serializer == null){
-            serializer = Serializer.getSerializer((Class<? extends Transmittable>)field.getType().getComponentType());
-        }
+    @Override
+    public void initialize(Field field){
+        super.initialize(field);
+        serializer = Serializer.getSerializer((Class<? extends Transmittable>)field.getType().getComponentType());
     }
 
 }

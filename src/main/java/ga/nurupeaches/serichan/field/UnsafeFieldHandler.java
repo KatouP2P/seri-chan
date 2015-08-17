@@ -6,8 +6,8 @@ import ga.nurupeaches.serichan.Transmittable;
 import ga.nurupeaches.serichan.field.unsafe.object.UnsafeArrayFieldHandler;
 import ga.nurupeaches.serichan.field.unsafe.object.UnsafeStringFieldHandler;
 import ga.nurupeaches.serichan.field.unsafe.object.UnsafeTransmittableFieldHandler;
-import ga.nurupeaches.serichan.field.unsafe.object.common.list.UnsafeTransmittableListFieldHandler;
-import ga.nurupeaches.serichan.field.unsafe.object.common.map.UnsafeTransmittableKeyAndValueMapFieldHandler;
+import ga.nurupeaches.serichan.field.unsafe.object.common.UnsafeListFieldHandler;
+import ga.nurupeaches.serichan.field.unsafe.object.common.UnsafeMapFieldHandler;
 import ga.nurupeaches.serichan.field.unsafe.primitive.*;
 
 import java.lang.reflect.Field;
@@ -35,8 +35,8 @@ public abstract class UnsafeFieldHandler<T> implements FieldHandler<T> {
         LOOKUP_MAP.put(boolean.class, UnsafeBooleanFieldHandler.class);
         LOOKUP_MAP.put(String.class, UnsafeStringFieldHandler.class);
 
-        EXTENDED_MAP.put(Map.class, UnsafeTransmittableKeyAndValueMapFieldHandler.class);
-        EXTENDED_MAP.put(List.class, UnsafeTransmittableListFieldHandler.class);
+        EXTENDED_MAP.put(Map.class, UnsafeMapFieldHandler.class);
+        EXTENDED_MAP.put(List.class, UnsafeListFieldHandler.class);
     }
 
     public static FieldHandler<?> newFieldHandler(Class<?> type){

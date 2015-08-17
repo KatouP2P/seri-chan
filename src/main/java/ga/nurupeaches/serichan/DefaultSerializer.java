@@ -7,25 +7,28 @@ import ga.nurupeaches.serichan.field.FieldHandler;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-public class DefaultSerializer<T extends Transmittable> implements Serializer {
+public class DefaultSerializer<T extends Transmittable> extends Serializer<T> {
 
     private final Class<T> transmittableClass;
     private final Cache cache = new Cache();
 
-    protected DefaultSerializer(Class<T> klass){
+    protected DefaultSerializer(Class<?> klass){
+        if(!Transmittable.class.isAssignableFrom(klass)){
+            throw new IllegalArgumentException("can't serialize non-Transmittable classes");
+        }
         cache.populateCache(klass);
-        transmittableClass = klass;
+        transmittableClass = (Class<T>)klass;
     }
 
     @Override
-    public ByteBuffer serialize(Object transmittable, boolean includeClassName) throws SerializationException{
-        if(!(transmittable instanceof Transmittable)) throw new IllegalArgumentException("attempted to serialize " +
+    public ByteBuffer serialize(T transmittable, boolean includeClassName) throws SerializationException{
+        if(transmittable == null) throw new IllegalArgumentException("attempted to serialize " +
                 "non-transmittable object");
 
         // Get the list of field handlers.
         Collection<FieldHandler<?>> handlers = cache.getFieldHandlers();
         // Store a size for the buffer; add the require size if we're including the class name.
-        int sizeToAllocate = cache.getSizeOfObject(transmittable);
+        int sizeToAllocate = sizeOf(transmittable);
         if(includeClassName) sizeToAllocate += BufferUtils.stringSize(transmittable.getClass().getName());
         // Allocate buffer
         ByteBuffer buffer = ByteBuffer.allocate(sizeToAllocate);
@@ -34,7 +37,7 @@ public class DefaultSerializer<T extends Transmittable> implements Serializer {
             BufferUtils.writeString(buffer, transmittable.getClass().getName());
         }
         // Put values into the buffer.
-        for(FieldHandler handler : handlers){
+        for(FieldHandler<?> handler : handlers){
 //            System.out.println("writing " + handler.getField().getType().getName() + " for " + handler.getField().getName() + " in class " + handler.getField().getDeclaringClass().getName());
             handler.write(transmittable, buffer);
         }
@@ -42,11 +45,11 @@ public class DefaultSerializer<T extends Transmittable> implements Serializer {
     }
 
     @Override
-    public Object deserialize(ByteBuffer buffer) throws SerializationException{
-        Transmittable transmittable;
+    public T deserialize(ByteBuffer buffer) throws SerializationException{
+        T transmittable;
         try {
             if(THE_UNSAFE != null){
-                transmittable = (Transmittable) THE_UNSAFE.allocateInstance(transmittableClass);
+                transmittable = (T)THE_UNSAFE.allocateInstance(transmittableClass);
             } else {
                 transmittable = transmittableClass.getConstructor().newInstance();
             }
@@ -54,10 +57,7 @@ public class DefaultSerializer<T extends Transmittable> implements Serializer {
             throw new SerializationException(e);
         }
 
-        // Okay, this is typically really bad practice, but we have to "drop" the generic part since
-        // javac would complain about type mis-match when calling FieldHandler.set since it would expect value
-        // to be of type ? (which we can't get during runtime since Java drops generics at compile-time.
-        for(FieldHandler handler : cache.getFieldHandlers()){
+        for(FieldHandler<?> handler : cache.getFieldHandlers()){
 //            System.out.println("reading " + handler.getField().getType().getName() + " for " + handler.getField().getName() + " in class " + handler.getField().getDeclaringClass().getName());
             handler.read(transmittable, buffer);
         }
@@ -65,8 +65,12 @@ public class DefaultSerializer<T extends Transmittable> implements Serializer {
     }
 
     @Override
-    public Cache getCache(){
-        return cache;
+    public int sizeOf(Object o){
+        int size = 0;
+        for(FieldHandler<?> handler : cache.getFieldHandlers()){
+            size += handler.size(o);
+        }
+        return size;
     }
 
     @Override

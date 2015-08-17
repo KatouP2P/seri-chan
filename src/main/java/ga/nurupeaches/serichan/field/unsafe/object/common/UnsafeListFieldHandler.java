@@ -10,13 +10,13 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class UnsafeListFieldHandler<T> extends UnsafeFieldHandler<List<T>> {
+public class UnsafeListFieldHandler<T> extends UnsafeFieldHandler<List<T>> {
 
-    private Type type;
+    private Serializer<T> valueSerializer;
 
     @Override
     public List<T> get(Object instance){
-        return (List<T>) Serializer.THE_UNSAFE.getObject(instance, offset);
+        return (List<T>)Serializer.THE_UNSAFE.getObject(instance, offset);
     }
 
     @Override
@@ -39,7 +39,7 @@ public abstract class UnsafeListFieldHandler<T> extends UnsafeFieldHandler<List<
                 Serializer.THE_UNSAFE.putObject(list, Serializer.THE_UNSAFE.objectFieldOffset(elementData_f), new Object[size]);
             }
             for(int i=0; i < size; i++){
-                list.add((T)type.readFromBuffer(buffer));
+                list.add(valueSerializer.deserialize(buffer));
             }
             set(instance, list);
         } catch (ClassNotFoundException e){
@@ -58,7 +58,7 @@ public abstract class UnsafeListFieldHandler<T> extends UnsafeFieldHandler<List<
         buffer.putInt(list.size()); // write out the size
         for(T obj : list){
             // loop through and write each element
-            type.writeToBuffer(obj, buffer);
+            buffer.put((ByteBuffer)valueSerializer.serialize(obj, false).flip());
         }
     }
 
@@ -67,7 +67,7 @@ public abstract class UnsafeListFieldHandler<T> extends UnsafeFieldHandler<List<
         List<T> list = get(instance);
         int size = Integer.BYTES;
         for(T obj : list){
-            size += type.sizeof(obj);
+            size += valueSerializer.sizeOf(obj);
         }
         return BufferUtils.stringSize(list.getClass().getName()) + size;
     }
@@ -75,7 +75,7 @@ public abstract class UnsafeListFieldHandler<T> extends UnsafeFieldHandler<List<
     @Override
     public void initialize(Field field){
         super.initialize(field);
-        type = Type.getType(field.getType());
+        valueSerializer = (Serializer<T>)Serializer.getSerializer(field.getType());
     }
 
 }

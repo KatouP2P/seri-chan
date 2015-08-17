@@ -1,21 +1,21 @@
-package ga.nurupeaches.serichan.field.unsafe.object.common.map;
+package ga.nurupeaches.serichan.field.unsafe.object.common;
 
 import ga.nurupeaches.common.exception.UncheckedReflectionException;
 import ga.nurupeaches.common.utils.BufferUtils;
 import ga.nurupeaches.serichan.Serializer;
-import ga.nurupeaches.serichan.Transmittable;
 import ga.nurupeaches.serichan.field.UnsafeFieldHandler;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UnsafeTransmittableKeyAndValueMapFieldHandler<K extends Transmittable, V extends Transmittable> extends UnsafeFieldHandler<Map<K, V>> {
+public class UnsafeMapFieldHandler<K, V> extends UnsafeFieldHandler<Map<K, V>> {
 
-    private Serializer keySerializer;
-    private Serializer valueSerializer;
+    private Serializer<K> keySerializer;
+    private Serializer<V> valueSerializer;
 
     @Override
     public Map<K, V> get(Object instance){
@@ -29,14 +29,12 @@ public class UnsafeTransmittableKeyAndValueMapFieldHandler<K extends Transmittab
 
     @Override
     public void read(Object instance, ByteBuffer buffer){
-        checkSerializer();
-
         try {
             Class<?> mapClass = Class.forName(BufferUtils.readString(buffer));
             if(!Map.class.isAssignableFrom(mapClass)){
                 throw new ClassNotFoundException("class didn't subclass list; wrong class?");
             }
-            Map map = (Map)Serializer.THE_UNSAFE.allocateInstance(mapClass);
+            Map<K, V> map = (Map<K, V>)Serializer.THE_UNSAFE.allocateInstance(mapClass);
             int size = buffer.getInt();
             if(map instanceof HashMap){
                 Field loadFactor_f = HashMap.class.getDeclaredField("loadFactor");
@@ -48,17 +46,14 @@ public class UnsafeTransmittableKeyAndValueMapFieldHandler<K extends Transmittab
             }
             set(instance, map);
         } catch (ClassNotFoundException e){
-            e.printStackTrace();
             throw new UncheckedReflectionException("failed to find class", e);
         } catch (ReflectiveOperationException e){
-            e.printStackTrace();
             throw new UncheckedReflectionException(e);
         }
     }
 
     @Override
     public void write(Object instance, ByteBuffer buffer){
-        checkSerializer();
         Map<K, V> map = get(instance);
         BufferUtils.writeString(buffer, map.getClass().getName()); // write out map class
         buffer.putInt(map.size()); // write out the size
@@ -71,37 +66,23 @@ public class UnsafeTransmittableKeyAndValueMapFieldHandler<K extends Transmittab
 
     @Override
     public int size(Object instance){
-        checkSerializer();
         int size = Integer.BYTES;
         Map<K, V> map = get(instance);
         for(Map.Entry<K, V> entry : map.entrySet()){
-            size += keySerializer.getCache().getSizeOfObject(entry.getKey());
-            size += valueSerializer.getCache().getSizeOfObject(entry.getValue());
+            size += keySerializer.sizeOf(entry.getKey());
+            size += valueSerializer.sizeOf(entry.getValue());
         }
         return BufferUtils.stringSize(map.getClass().getName()) + size;
     }
 
-    // If you ask why this does basically the same thing in both loops:
-    // From what I've read, getGenericType() can cause a performance impact; so I want to avoid calling it a lot.
-    // Micro-optimization is the end of me.
-    private final void checkSerializer(){
-        if(keySerializer == null){
-            ParameterizedType type = (ParameterizedType)field.getGenericType();
-            keySerializer = Serializer.getSerializer((Class<? extends Transmittable>)type.getActualTypeArguments()[0]);
 
-            if(valueSerializer == null){
-                valueSerializer = Serializer.getSerializer((Class<? extends Transmittable>)type.getActualTypeArguments()[1]);
-            }
-        }
-
-        if(valueSerializer == null){
-            ParameterizedType type = (ParameterizedType)field.getGenericType();
-            valueSerializer = Serializer.getSerializer((Class<? extends Transmittable>)type.getActualTypeArguments()[1]);
-
-            if(keySerializer == null){
-                keySerializer = Serializer.getSerializer((Class<? extends Transmittable>)type.getActualTypeArguments()[0]);
-            }
-        }
+    @Override
+    public void initialize(Field field){
+        super.initialize(field);
+        Type[] types = ((ParameterizedType)field.getGenericType()).getActualTypeArguments();
+        keySerializer = (Serializer<K>)Serializer.getSerializer((Class<?>)types[0]);
+        valueSerializer = (Serializer<V>)Serializer.getSerializer((Class<?>)types[1]);
     }
+
 
 }

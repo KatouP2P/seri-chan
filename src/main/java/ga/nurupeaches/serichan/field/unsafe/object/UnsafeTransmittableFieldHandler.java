@@ -29,14 +29,14 @@ public class UnsafeTransmittableFieldHandler<T extends Transmittable> extends Un
     @Override
     public void write(Object instance, ByteBuffer buffer){
         checkSerializer();
-        buffer.put((ByteBuffer)serializer.serialize(get(instance), false).flip());
         // FOR THE LOVE OF GOD NEVER FORGET CALLING FLIP()
+        buffer.put((ByteBuffer)serializer.serialize(get(instance), false).flip());
     }
 
     @Override
     public int size(Object instance){
         checkSerializer();
-        return serializer.getCache().getSizeOfObject(get(instance));
+        return serializer.sizeOf(get(instance));
     }
 
     private final void checkSerializer(){

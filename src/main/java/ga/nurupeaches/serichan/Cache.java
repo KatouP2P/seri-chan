@@ -28,15 +28,6 @@ public class Cache {
         }
         cached = true;
     }
-
-    public int getSizeOfObject(Object instance){
-        int size = 0;
-        for(FieldHandler<?> handler : handlerMap.values()){
-            size += handler.size(instance);
-        }
-        return size;
-    }
-
     public boolean isCached(){
         return cached;
     }

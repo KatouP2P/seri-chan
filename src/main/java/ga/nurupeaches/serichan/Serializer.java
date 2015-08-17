@@ -12,10 +12,11 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public interface Serializer {
+public abstract class Serializer<T> {
+
+    private static final Map<Class<?>, Serializer<?>> SERIALIZERS = new HashMap<>();
 
     public static final Logger LOGGER = Logger.getLogger("Seri-chan");
-    public static final Map<Class<?>, Serializer> SERIALIZERS = new HashMap<>();
     // They'll never know what hit them.
     public static final Unsafe THE_UNSAFE = new Object(){
 
@@ -31,8 +32,8 @@ public interface Serializer {
 
     }.unsafe;
 
-    public static Serializer findSerializer(ByteBuffer buffer){
-        Serializer serializer;
+    public static Serializer<?> findSerializer(ByteBuffer buffer){
+        Serializer<?> serializer;
         String className = BufferUtils.readString(buffer);
         Class<? extends Transmittable> klass;
         try {
@@ -44,8 +45,8 @@ public interface Serializer {
         return serializer;
     }
 
-    public static Serializer getSerializer(Class<? extends Transmittable> klass){
-        Serializer serializer;
+    public static Serializer<?> getSerializer(Class<?> klass){
+        Serializer<?> serializer;
         if((serializer = SERIALIZERS.get(klass)) == null){
             serializer = new DefaultSerializer<>(klass);
             SERIALIZERS.put(klass, serializer);
@@ -53,13 +54,13 @@ public interface Serializer {
         return serializer;
     }
 
-    public default ByteBuffer serialize(Object transmittable) throws SerializationException {
+    public ByteBuffer serialize(T transmittable) throws SerializationException {
         return serialize(transmittable, true);
     }
 
-    public ByteBuffer serialize(Object transmittable, boolean includeClassName) throws SerializationException;
-    public Object deserialize(ByteBuffer buffer) throws SerializationException;
-    public Class<?> getSerializingClass();
-    public Cache getCache();
+    public abstract ByteBuffer serialize(T transmittable, boolean includeClassName) throws SerializationException;
+    public abstract T deserialize(ByteBuffer buffer) throws SerializationException;
+    public abstract Class<?> getSerializingClass();
+    public abstract int sizeOf(Object o);
 
 }
